@@ -26,34 +26,38 @@ Web Build: http://mootools.net/core/builder/e426a9ae7167c5807b173d5deff673fc
 /*! MooTools: the javascript framework. license: MIT-style license. copyright: Copyright (c) 2006-2015 [Valerio Proietti](http://mad4milk.net/).*/
 
 (function(){
-
+	//版本信息
 this.MooTools = {
 	version: '1.6.0',
 	build: '529422872adfff401b901b8b6c7ca5114ee95e2b'
 };
 
-// typeOf, instanceOf
+// 定义了typeOf, instanceOf两个函数来替代JS原生的typeof和instanceof方法(注意大小写)
 
-//定义typeof方法
+//定义typeOf方法(注意O大写！),在原生typeof的基础上做了拓展
 var typeOf = this.typeOf = function(item){
+	//如果对象是null则返回null
 	if (item == null) return 'null';
 	if (item.$family != null) return item.$family();
 
 	//判断node类型
 	if (item.nodeName){
-		//如果nodeType为
+		//如果nodeType的值为1，则返回element
 		if (item.nodeType == 1) return 'element';
+		//如果nodeType的值为3，判断其有无值，选择返回值或者空白格
 		if (item.nodeType == 3) return (/\S/).test(item.nodeValue) ? 'textnode' : 'whitespace';
 	} else if (typeof item.length == 'number'){
-		if ('callee' in item) return 'arguments';
-		if ('item' in item) return 'collection';
+		if ('callee' in item) return 'arguments';				//如果有callee属性的则返回arguments
+		if ('item' in item) return 'collection';				//如果有item属性的则返回collection
 	}
-
+	//如果都不满足则返回原生JS typeof运算符的结果："undefined","boolean","string","number","object","function"
 	return typeof item;
 };
-
+//定义instanceOf方法(注意O大写！)，在原生instanceof的基础上做了拓展
 var instanceOf = this.instanceOf = function(item, object){
+	//如果对象为null则返回false
 	if (item == null) return false;
+	//定义constructor属性
 	var constructor = item.$constructor || item.constructor;
 	while (constructor){
 		if (constructor === object) return true;
@@ -61,7 +65,7 @@ var instanceOf = this.instanceOf = function(item, object){
 	}
 	/*<ltIE8>*/
 	if (!item.hasOwnProperty) return false;
-	/*</ltIE8>*/
+	//如果都不满足则返回原生JS typeof运算符的结果
 	return item instanceof object;
 };
 
