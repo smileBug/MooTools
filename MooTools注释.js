@@ -34,7 +34,7 @@ this.MooTools = {
 
 // 定义了typeOf, instanceOf两个函数来替代JS原生的typeof和instanceof方法(注意大小写)
 
-//定义typeOf方法(注意O大写！),在原生typeof的基础上做了拓展
+//定义typeOf方法(注意O大写！),在原生typeof的基础上做了拓展,判断参数类型
 var typeOf = this.typeOf = function(item){
 	//如果对象是null则返回null
 	if (item == null) return 'null';
@@ -53,18 +53,20 @@ var typeOf = this.typeOf = function(item){
 	//如果都不满足则返回原生JS typeof运算符的结果："undefined","boolean","string","number","object","function"
 	return typeof item;
 };
-//定义instanceOf方法(注意O大写！)，在原生instanceof的基础上做了拓展
+
+//定义instanceOf方法(注意O大写！)，在原生instanceof的基础上做了拓展,判断某个对象是否是某个特定类型的实例
 var instanceOf = this.instanceOf = function(item, object){
 	//如果对象为null则返回false
 	if (item == null) return false;
-	//定义constructor属性
+	//定义constructor属性 判断是否可以追溯到object，如果可以则返回true
 	var constructor = item.$constructor || item.constructor;
 	while (constructor){
 		if (constructor === object) return true;
 		constructor = constructor.parent;
 	}
-	/*<ltIE8>*/
+	/*<ltIE8>*/	//------------>前后两个/*<ltIE8>*/表示为了兼容IE8.。。。。。。万恶的IE！！！
 	if (!item.hasOwnProperty) return false;
+	/*</ltIE8>*/
 	//如果都不满足则返回原生JS typeof运算符的结果
 	return item instanceof object;
 };
@@ -72,20 +74,26 @@ var instanceOf = this.instanceOf = function(item, object){
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /*<ltIE8>*/
+
 var enumerables = true;
+//对IE中不能遍历对象中toString属性的bug做一个修正
 for (var i in {toString: 1}) enumerables = null;
+//如果遍历不到则enumerables为true，然后将这些属性暂存到一个数组保存到enumerables中
 if (enumerables) enumerables = ['hasOwnProperty', 'valueOf', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString', 'constructor'];
+
+//该函数就是传进object和bind两个对象和fn方法，首先遍历判断object对象里是否有enumberables数组中的那些属性，
+//如果有则让bind对象执行fn方法，该方法传入k和object[k]两个参数
 function forEachObjectEnumberableKey(object, fn, bind){
 	if (enumerables) for (var i = enumerables.length; i--;){
 		var k = enumerables[i];
-		// signature has key-value, so overloadSetter can directly pass the
-		// method function, without swapping arguments.
+		//hasOwnProperty.call(object, k) --> object.hasOwnProperty(k) -->object对象是否有自己的属性k
+		//fn.call(bind, k, object[k]) --> bind.fn(k,object[k]) -->bind对象执行fn方法并传入参数k和object[k]
 		if (hasOwnProperty.call(object, k)) fn.call(bind, k, object[k]);
 	}
 }
 /*</ltIE8>*/
 
-// Function overloading
+// Function 重载 扩展
 
 var Function = this.Function;
 
