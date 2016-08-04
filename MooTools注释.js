@@ -7,7 +7,7 @@ Web Build: http://mootools.net/core/builder/e426a9ae7167c5807b173d5deff673fc
 
 内容: Core
 
-描述: The heart of MooTools.
+描述: The heart of mootoolsols.
 
 许可: MIT-style license.
 
@@ -16,8 +16,8 @@ Web Build: http://mootools.net/core/builder/e426a9ae7167c5807b173d5deff673fc
 作者: The MooTools production team (http://mootools.net/developers/)
 
 创作灵感:
-  - 类实现 inspired by [Base.js](http://dean.edwards.name/weblog/2006/03/base/) Copyright (c) 2006 Dean Edwards, [GNU Lesser General Public License](http://opensource.org/licenses/lgpl-license.php)
-  - 许多功能 inspired by [Prototype.js](http://prototypejs.org) Copyright (c) 2005-2007 Sam Stephenson, [MIT License](http://opensource.org/licenses/mit-license.php)
+  - Class implementation inspired by [Base.js](http://dean.edwards.name/weblog/2006/03/base/) Copyright (c) 2006 Dean Edwards, [GNU Lesser General Public License](http://opensource.org/licenses/lgpl-license.php)
+  - Some functionality inspired by [Prototype.js](http://prototypejs.org) Copyright (c) 2005-2007 Sam Stephenson, [MIT License](http://opensource.org/licenses/mit-license.php)
 
 提供接口: [Core, MooTools, Type, typeOf, instanceOf, Native]
 
@@ -26,6 +26,7 @@ Web Build: http://mootools.net/core/builder/e426a9ae7167c5807b173d5deff673fc
 /*! MooTools: the javascript framework. license: MIT-style license. copyright: Copyright (c) 2006-2015 [Valerio Proietti](http://mad4milk.net/).*/
 
 (function(){
+	//代码被包在一个匿名函数的内部，所以这里的this明确指向全局对象。
 	//版本信息
 this.MooTools = {
 	version: '1.6.0',
@@ -71,6 +72,7 @@ var instanceOf = this.instanceOf = function(item, object){
 	return item instanceof object;
 };
 
+//简写hasOwnProperty
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /*<ltIE8>*/
@@ -93,53 +95,64 @@ function forEachObjectEnumberableKey(object, fn, bind){
 }
 /*</ltIE8>*/
 
-// Function 重载 扩展
+// Function 重载 扩展  包装了原函数并返回一个拓展过的函数
 
 var Function = this.Function;
 
+	//overloadSetter可以扩展函数使之能够接受josn形式(对象类)的参数 即function({a:b,c:d})
 Function.prototype.overloadSetter = function(usePlural){
+	//这里的this指代的是原函数对象，赋值给self变量---> self ==  原函数
 	var self = this;
+	//返回拓展过的函数
 	return function(a, b){
+		//如果调用包装函数时不带参数，则返回原函数
 		if (a == null) return this;
 		if (usePlural || typeof a != 'string'){
+			//假如传入的第一个参数不是字符串，那就假设它为对象，然后枚举对象的属性，并对this对象执行原函数(将属性和属性值作为参数传进去)
 			for (var k in a) self.call(this, k, a[k]);
+			//为了兼容IE8 当有不可枚举的属性(例如toString)使用forEachObjectEnumberableKey()方法给this对象执行原函数(将属性和属性值作为参数传进去)
 			/*<ltIE8>*/
 			forEachObjectEnumberableKey(a, self, this);
 			/*</ltIE8>*/
 		} else {
+			//常规形式，不做改动(当传入的第一个参数是字符串，则传入a和b两个参数执行原函数)
 			self.call(this, a, b);
 		}
 		return this;
 	};
 };
-
+ //overloadGetter可以扩展函数使之能够接受数组形式的参数
+ //之前git(name)返回一个value,现在可以git([name1,name2,name3])返回{name1:value,name2:value2,name3:value3}
 Function.prototype.overloadGetter = function(usePlural){
 	var self = this;
 	return function(a){
 		var args, result;
 		if (typeof a != 'string') args = a;
+		//接受数组形式的参数
 		else if (arguments.length > 1) args = arguments;
 		else if (usePlural) args = [a];
 		if (args){
 			result = {};
+			//把数组参数中每个值(arg[i])作为参数传入原函数中，并将返回值作为属性值传入到result对象对应的名为参数值(args[i])的属性中
 			for (var i = 0; i < args.length; i++) result[args[i]] = self.call(this, args[i]);
 		} else {
+			//常规形式，不做改动
 			result = self.call(this, a);
 		}
 		return result;
 	};
 };
-
+//拓展extend方法(扩展function的静态方法)，可以添加function类型对象的方法
 Function.prototype.extend = function(key, value){
 	this[key] = value;
 }.overloadSetter();
-
+//拓展implement方法(扩展function的实例方法)，可以添加function的原型对象的方法
 Function.prototype.implement = function(key, value){
 	this.prototype[key] = value;
 }.overloadSetter();
 
 // From
-
+//简写slice
 var slice = Array.prototype.slice;
 
 Array.convert = function(item){
