@@ -151,33 +151,38 @@ Function.prototype.implement = function(key, value){
 	this.prototype[key] = value;
 }.overloadSetter();
 
-// From
+// From  拓展了JS的类型转换
 //简写slice
 var slice = Array.prototype.slice;
 
+//Array的转换方法
 Array.convert = function(item){
+	//如果item为null或者为undefined，则返回一个空数组
 	if (item == null) return [];
+	//如果item是数组则返回这个数组，如果是类数组，则通过slice()方法将其转换成数组返回，否则返回有单个item组成的单例数组[item]
 	return (Type.isEnumerable(item) && typeof item != 'string') ? (typeOf(item) == 'array') ? item : slice.call(item) : [item];
 };
 
+//Function的转换方法，如果item是function则返回item方法，否则就返回一个返回值为item的匿名函数
 Function.convert = function(item){
 	return (typeOf(item) == 'function') ? item : function(){
 		return item;
 	};
 };
 
-
+//Number的转换方法，如果item能转换成number则返回转换后的数字，否则返回null
 Number.convert = function(item){
 	var number = parseFloat(item);
 	return isFinite(number) ? number : null;
 };
 
+//String的转换方法，通过一元加操作符“+”调用item的toString()方法将其转换成字符串
 String.convert = function(item){
 	return item + '';
 };
 
 
-
+//这里我其实搞不懂为啥要做个替代，直接用convert作为转换方法不好吗 ？？？
 Function.from = Function.convert;
 Number.from = Number.convert;
 String.from = String.convert;
@@ -185,12 +190,13 @@ String.from = String.convert;
 // hide, protect
 
 Function.implement({
-
+	//hide()是把function对象的$hidden属性设为true。标记为被隐藏的方法。(之后的应用使得该方法无法被得到)
 	hide: function(){
 		this.$hidden = true;
 		return this;
 	},
 
+	//protect()是把function对象的$protected属性设为true。标记为被保护的方法。(之后的应用使得该方法被继承后无法被篡改)
 	protect: function(){
 		this.$protected = true;
 		return this;
