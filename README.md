@@ -6,3 +6,5 @@ MooTools 1.6.0 源码解读
 增加了关于Function重载中关于overloadSetter、overloadGetter、extend和implement的解析
 ### 2016/8/6
 拓展了JS的强制转换类型
+### 2016/8/8
+感觉看得有点吃力，还是回去再看遍红宝书！
