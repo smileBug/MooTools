@@ -75,8 +75,9 @@ var instanceOf = this.instanceOf = function(item, object){
 //简写hasOwnProperty
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-/*<ltIE8>*/
 
+/*<ltIE8>*/
+	//在IE中，原型的默认不可枚举的所有属性和方法如toString()都会被跳过，而枚举不到，就算实例重写了这个属性，也不能。。。bug
 var enumerables = true;
 //对IE中不能遍历对象中toString属性的bug做一个修正
 for (var i in {toString: 1}) enumerables = null;
@@ -94,6 +95,7 @@ function forEachObjectEnumberableKey(object, fn, bind){
 	}
 }
 /*</ltIE8>*/
+
 
 // Function 重载 扩展  包装了原函数并返回一个拓展过的函数
 
