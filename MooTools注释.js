@@ -39,6 +39,7 @@ this.MooTools = {
 var typeOf = this.typeOf = function(item){
 	//如果对象是null则返回null
 	if (item == null) return 'null';
+	//对于存在$family方法的返回其返回值，在下面Type类型定义中有。
 	if (item.$family != null) return item.$family();
 
 	//判断node类型
@@ -154,7 +155,7 @@ Function.prototype.implement = function(key, value){
 }.overloadSetter();
 
 // From  拓展了JS的类型转换
-//简写slice
+//简写转换数组的方法
 var slice = Array.prototype.slice;
 
 //Array的转换方法
@@ -210,13 +211,15 @@ Function.implement({
 
 var Type = this.Type = function(name, object){
 	if (name){
-		var lower = name.toLowerCase();
+		var lower = name.toLowerCase();		//将name参数小写化，在判断type时就不用考虑大小写了
+		//判断类型函数
 		var typeCheck = function(item){
 			return (typeOf(item) == lower);
 		};
-
+		//每当创建一个Type实例就给它定义一个isname方法来判断是不是name类型
 		Type['is' + name] = typeCheck;
 		if (object != null){
+			//定义$family方法，返回类型名。加了hide标记为被隐藏的方法表示此函数不可在implement或者extend之时被覆盖
 			object.prototype.$family = (function(){
 				return lower;
 			}).hide();
@@ -225,58 +228,63 @@ var Type = this.Type = function(name, object){
 	}
 
 	if (object == null) return null;
-
+	//重新返回的object经过extend(this)后就拥有了Type原型对象中方法。
 	object.extend(this);
 	object.$constructor = Type;
 	object.prototype.$constructor = object;
 
 	return object;
 };
-
+//导出Object原生的toString方法方便后面简写
 var toString = Object.prototype.toString;
-
+//对象有length属性，且不是函数
 Type.isEnumerable = function(item){
 	return (item != null && typeof item.length == 'number' && toString.call(item) != '[object Function]' );
 };
 
 var hooks = {};
-
+//根据对象的类别取得该类别所有相关的数组
 var hooksOf = function(object){
 	var type = typeOf(object.prototype);
 	return hooks[type] || (hooks[type] = []);
 };
 
 var implement = function(name, method){
+	//跳过私有函数
 	if (method && method.$hidden) return;
-
+	//获取对象类别
 	var hooks = hooksOf(this);
 
 	for (var i = 0; i < hooks.length; i++){
 		var hook = hooks[i];
+		//如果时type类型，则为Type类型的原型定义该方法和属性
 		if (typeOf(hook) == 'type') implement.call(hook, name, method);
+		//
 		else hook.call(this, name, method);
 	}
-
+	//在this的原型上定义该方法，或者覆盖已经定义的方法（但跳过受保护的方法）。
 	var previous = this.prototype[name];
 	if (previous == null || !previous.$protected) this.prototype[name] = method;
-
+	//如果对象本身没有该方法，那定义一个同名方法
 	if (this[name] == null && typeOf(method) == 'function') extend.call(this, name, function(item){
 		return method.apply(item, slice.call(arguments, 1));
 	});
 };
 
 var extend = function(name, method){
+	//跳过私有函数
 	if (method && method.$hidden) return;
 	var previous = this[name];
+	//如果没有该方法，就增加该方法；或者该方法不被保护，那改写该方法。
 	if (previous == null || !previous.$protected) this[name] = method;
 };
 
 Type.implement({
-
+	// Type实例将使用特有的implement（非Function.implement）
 	implement: implement.overloadSetter(),
-
+	// Type实例将使用特有的extend（非Function.extend）
 	extend: extend.overloadSetter(),
-
+	//为函数取别名
 	alias: function(name, existing){
 		implement.call(this, name, this.prototype[existing]);
 	}.overloadSetter(),
@@ -288,12 +296,15 @@ Type.implement({
 
 });
 
+//注册Type本身，所有Type本身也有了Type原型的方法
 new Type('Type', Type);
 
-// Default Types
+// Default Types  开始构建Type，将内置类型变成Type
 
 var force = function(name, object, methods){
+	//只有当object等于Object时才会返回false
 	var isType = (object != Object),
+		//简写原型
 		prototype = object.prototype;
 
 	if (isType) object = new Type(name, object);
@@ -302,8 +313,9 @@ var force = function(name, object, methods){
 		var key = methods[i],
 			generic = object[key],
 			proto = prototype[key];
-
+		//如果本身有这个方法，就把它保护起来
 		if (generic) generic.protect();
+		//如果对象原型有该方法，也把它保护起来
 		if (isType && proto) object.implement(key, proto.protect());
 	}
 
@@ -319,7 +331,7 @@ var force = function(name, object, methods){
 
 	return force;
 };
-
+//注册所有的内置对象，并把对象的这些方法都保护起来
 force('String', String, [
 	'charAt', 'charCodeAt', 'concat', 'contains', 'indexOf', 'lastIndexOf', 'match', 'quote', 'replace', 'search',
 	'slice', 'split', 'substr', 'substring', 'trim', 'toLowerCase', 'toUpperCase'
@@ -339,7 +351,7 @@ force('String', String, [
 ])('Date', Date, ['now']);
 
 Object.extend = extend.overloadSetter();
-
+//重写了Dato的now实现，使它返回相应日期的毫秒数
 Date.extend('now', function(){
 	return +(new Date);
 });
@@ -347,13 +359,13 @@ Date.extend('now', function(){
 new Type('Boolean', Boolean);
 
 // fixes NaN returning as Number
-
+//修正了NaN返回number类型的问题
 Number.prototype.$family = function(){
 	return isFinite(this) ? 'number' : 'null';
 }.hide();
 
 // Number.random
-
+//通过Math.random方法封装了Number.random方法，使它直接从某个整数范围内随机返回一个值
 Number.extend('random', function(min, max){
 	return Math.floor(Math.random() * (max - min + 1) + min);
 });
@@ -370,6 +382,7 @@ Array.implement({
 	},
 	/*</!ES5>*/
 
+	//遍历数组
 	each: function(fn, bind){
 		Array.forEach(this, fn, bind);
 		return this;
@@ -399,12 +412,12 @@ Object.extend({
 	}
 
 });
-
+//遍历对象
 Object.each = Object.forEach;
 
 
 // Array & Object cloning, Object merging and appending
-
+//数组和对象的深度克隆
 var cloneOf = function(item){
 	switch (typeOf(item)){
 		case 'array': return item.clone();
@@ -413,6 +426,7 @@ var cloneOf = function(item){
 	}
 };
 
+//数组克隆方法
 Array.implement('clone', function(){
 	var i = this.length, clone = new Array(i);
 	while (i--) clone[i] = cloneOf(this[i]);
