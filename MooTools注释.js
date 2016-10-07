@@ -69,7 +69,7 @@ var instanceOf = this.instanceOf = function(item, object){
 	/*<ltIE8>*/	//------------>前后两个/*<ltIE8>*/表示为了兼容IE8.。。。。。。万恶的IE！！！
 	if (!item.hasOwnProperty) return false;
 	/*</ltIE8>*/
-	//如果都不满足则返回原生JS typeof运算符的结果
+	//如果都不满足则返回原生JS instanceof运算符的结果
 	return item instanceof object;
 };
 
